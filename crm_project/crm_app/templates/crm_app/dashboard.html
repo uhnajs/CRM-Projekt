@@ -54,7 +54,15 @@
         </thead>
         <tbody>
             {% for zamowienie in zamowienia %}
-                <tr>
+                <tr
+                    {% if zamowienie.status == 'w_realizacji' %}
+                        class="table-warning"
+                    {% elif zamowienie.status == 'anulowane' %}
+                        class="table-danger"
+                    {% elif zamowienie.status == 'zrealizowane' %}
+                        class="table-success"
+                    {% endif %}
+                >
                     <td>{{ zamowienie.id }}</td>
                     <td>{{ zamowienie.klient }}</td>
                     <td>{{ zamowienie.get_status_display }}</td>

@@ -29,7 +29,10 @@
                         <span class="navbar-text">Witaj, {{ user.username }}!</span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'logout' %}">Wyloguj się</a>
+                        <form method="POST" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-link nav-link" style="display: inline; padding: 0; margin: 0; border: none; background: none;">Wyloguj się</button>
+                        </form>
                     </li>
                 {% else %}
                     <li class="nav-item">

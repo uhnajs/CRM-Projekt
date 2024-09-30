@@ -3,7 +3,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Klient, Zamowienie
 from .forms import KlientForm, ZamowienieForm, RejestracjaForm
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import Group
 from django.core.mail import send_mail
@@ -18,6 +18,7 @@ def dashboard(request):
         'zamowienia': zamowienia,
     }
     return render(request, 'crm_app/dashboard.html', context)
+
 
 @login_required
 @permission_required('crm_app.add_klient', raise_exception=True)
@@ -52,12 +53,10 @@ def dodaj_zamowienie(request):
         form = ZamowienieForm(request.POST)
         if form.is_valid():
             zamowienie = form.save()
-            # Opcjonalnie: Wysyłanie e-maila potwierdzającego
-            # temat = 'Potwierdzenie zamówienia'
-            # wiadomosc = f'Dziękujemy za zamówienie nr {zamowienie.id}.'
-            # odbiorca = [zamowienie.klient.email]
-            # send_mail(temat, wiadomosc, settings.DEFAULT_FROM_EMAIL, odbiorca)
+            print("Zamówienie zapisane:", zamowienie)
             return redirect('dashboard')
+        else:
+            print("Błędy formularza:", form.errors)
     context = {'form': form, 'title': 'Dodaj Zamówienie'}
     return render(request, 'crm_app/form.html', context)
 
@@ -98,3 +97,7 @@ def raport_sprzedazy(request):
         'total_kwota': total_kwota,
     }
     return render(request, 'crm_app/raport_sprzedazy.html', context)
+
+def custom_logout(request):
+    logout(request)
+    return redirect('login')

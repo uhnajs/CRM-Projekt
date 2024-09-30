@@ -11,3 +11,17 @@ h1, h2 {
 .table {
     background-color: #fff;
 }
+
+.status-w-realizacji {
+    background-color: orange;
+}
+
+.status-anulowane {
+    background-color: red;
+    color: white;
+}
+
+.status-zrealizowane {
+    background-color: green;
+    color: white;
+
