@@ -11,6 +11,11 @@ class KlientForm(ModelForm):
         model = Klient
         fields = '__all__'
 
+    def __init__(self, *args, **kwargs):
+        super(KlientForm, self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
 class ZamowienieForm(ModelForm):
     class Meta:
         model = Zamowienie
