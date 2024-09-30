@@ -10,9 +10,12 @@
     <link rel="stylesheet" type="text/css" href="{% static 'crm_app/styles.css' %}">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <a class="navbar-brand" href="{% url 'dashboard' %}">CRM</a>
-        <div class="collapse navbar-collapse">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mr-auto">
                 {% if user.is_authenticated %}
                     <li class="nav-item">
@@ -23,16 +26,13 @@
                     </li>
                 {% endif %}
             </ul>
-            <ul class="navbar-nav ml-auto">
+            <ul class="navbar-nav ml-auto align-items-center">
                 {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <span class="navbar-text">Witaj, {{ user.username }}!</span>
+                        <span class="navbar-text mr-3">Witaj, {{ user.username }}!</span>
                     </li>
                     <li class="nav-item">
-                        <form method="POST" action="{% url 'logout' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-link nav-link" style="display: inline; padding: 0; margin: 0; border: none; background: none;">Wyloguj się</button>
-                        </form>
+                        <a href="{% url 'logout' %}" class="nav-link text-white" style="padding: 0;">Wyloguj się</a>
                     </li>
                 {% else %}
                     <li class="nav-item">
@@ -45,6 +45,7 @@
             </ul>
         </div>
     </nav>
+
     <div class="container mt-4">
         {% block content %}
         {% endblock %}

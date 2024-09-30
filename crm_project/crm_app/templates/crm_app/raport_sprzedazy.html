@@ -1,33 +1,81 @@
 {% extends 'crm_app/base.html' %}
-{% load static %}
 
 {% block title %}Raport Sprzedaży{% endblock %}
 
 {% block content %}
     <h1>Raport Sprzedaży</h1>
-    <p>Łączna kwota sprzedaży: {{ total_kwota }} PLN</p>
+
+    <!-- Sekcja dla "Zrealizowane" -->
+    <h2>Zrealizowane</h2>
     <table class="table">
         <thead>
             <tr>
                 <th>ID Zamówienia</th>
                 <th>Klient</th>
-                <th>Data</th>
                 <th>Kwota</th>
-                <th>Status</th>
             </tr>
         </thead>
         <tbody>
-            {% for zamowienie in zamowienia %}
+            {% for zamowienie in zamowienia_zrealizowane %}
                 <tr>
                     <td>{{ zamowienie.id }}</td>
                     <td>{{ zamowienie.klient }}</td>
-                    <td>{{ zamowienie.data_zamowienia }}</td>
                     <td>{{ zamowienie.kwota }}</td>
-                    <td>{{ zamowienie.get_status_display }}</td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="5">Brak zamówień.</td>
+                    <td colspan="3">Brak zrealizowanych zamówień.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p><strong>Łączna kwota sprzedaży:</strong> {{ laczna_kwota }}</p>
+
+    <!-- Sekcja dla "W realizacji" -->
+    <h2>W realizacji</h2>
+    <table class="table table-warning">
+        <thead>
+            <tr>
+                <th>ID Zamówienia</th>
+                <th>Klient</th>
+                <th>Kwota</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for zamowienie in zamowienia_w_realizacji %}
+                <tr>
+                    <td>{{ zamowienie.id }}</td>
+                    <td>{{ zamowienie.klient }}</td>
+                    <td>{{ zamowienie.kwota }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">Brak zamówień w realizacji.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Sekcja dla "Anulowane" -->
+    <h2>Anulowane</h2>
+    <table class="table table-danger">
+        <thead>
+            <tr>
+                <th>ID Zamówienia</th>
+                <th>Klient</th>
+                <th>Kwota</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for zamowienie in zamowienia_anulowane %}
+                <tr>
+                    <td>{{ zamowienie.id }}</td>
+                    <td>{{ zamowienie.klient }}</td>
+                    <td>{{ zamowienie.kwota }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">Brak anulowanych zamówień.</td>
                 </tr>
             {% endfor %}
         </tbody>

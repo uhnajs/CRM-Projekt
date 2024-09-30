@@ -90,12 +90,21 @@ def rejestracja(request):
 
 @login_required
 def raport_sprzedazy(request):
-    zamowienia = Zamowienie.objects.all()
-    total_kwota = sum(z.kwota for z in zamowienia)
+    # Poprawne filtrowanie zamówień według statusów
+    zamowienia_zrealizowane = Zamowienie.objects.filter(status='zrealizowane')
+    zamowienia_anulowane = Zamowienie.objects.filter(status='anulowane')
+    zamowienia_w_realizacji = Zamowienie.objects.filter(status='w_realizacji')
+
+    # Łączna kwota tylko dla "Zrealizowane"
+    laczna_kwota = sum(z.kwota for z in zamowienia_zrealizowane)
+
     context = {
-        'zamowienia': zamowienia,
-        'total_kwota': total_kwota,
+        'zamowienia_zrealizowane': zamowienia_zrealizowane,
+        'zamowienia_anulowane': zamowienia_anulowane,
+        'zamowienia_w_realizacji': zamowienia_w_realizacji,
+        'laczna_kwota': laczna_kwota,
     }
+
     return render(request, 'crm_app/raport_sprzedazy.html', context)
 
 def custom_logout(request):
