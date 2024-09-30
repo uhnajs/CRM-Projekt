@@ -19,8 +19,18 @@ class Klient(models.Model):
         return f"{self.imie} {self.nazwisko}"
 
 
+class Produkt(models.Model):
+    nazwa = models.CharField(max_length=255)
+    cena = models.DecimalField(max_digits=10, decimal_places=2)
+    opis = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.nazwa
+
+
 class Zamowienie(models.Model):
     klient = models.ForeignKey(Klient, on_delete=models.CASCADE)
+    produkty = models.ManyToManyField(Produkt)  # Nowe pole powiązane z produktem
     data_zamowienia = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=15, choices=[
         ('w_realizacji', 'W realizacji'),
@@ -31,7 +41,6 @@ class Zamowienie(models.Model):
 
     def __str__(self):
         return f"Zamówienie {self.id} - {self.klient}"
-
 
 class HistoriaKontaktu(models.Model):
     klient = models.ForeignKey(Klient, on_delete=models.CASCADE)

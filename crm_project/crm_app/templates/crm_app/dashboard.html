@@ -75,9 +75,13 @@
                 <a href="{% url 'dodaj-klienta' %}" class="btn btn-primary mr-2">Dodaj Klienta</a>
             {% endif %}
             {% if perms.crm_app.add_zamowienie %}
-                <a href="{% url 'dodaj-zamowienie' %}" class="btn btn-primary">Dodaj Zamówienie</a>
+                <a href="{% url 'dodaj-zamowienie' %}" class="btn btn-primary mr-2">Dodaj Zamówienie</a>
+            {% endif %}
+            {% if perms.crm_app.add_produkt %}
+                <a href="{% url 'dodaj-produkt' %}" class="btn btn-primary">Dodaj Produkt</a>
             {% endif %}
         </div>
+
 
         <!-- Lista Klientów -->
         <h2 class="mt-4">Lista Klientów</h2>
@@ -148,7 +152,93 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <!-- Sekcja wykresów -->
+        <div class="row my-4">
+            <!-- Wykres Zamówień -->
+            <div class="col-md-12 mb-4">
+                <h3>Zamówienia w Ostatnich 6 Miesiącach</h3>
+                <canvas id="ordersChart"></canvas>
+            </div>
+            <!-- Wykres Kwoty Sprzedaży -->
+            <div class="col-md-12 mt-4">
+                <h3>Kwota Sprzedaży w Ostatnich 6 Miesiącach</h3>
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Dodanie Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            // Dane do wykresu: Liczba zamówień w ostatnich 6 miesiącach
+            var ctxOrders = document.getElementById('ordersChart').getContext('2d');
+            var ordersChart = new Chart(ctxOrders, {
+                type: 'line',
+                data: {
+                    labels: [
+                        {% for item in last_six_months %}
+                            "{{ item.month|date:'F Y' }}"{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    ],
+                    datasets: [{
+                        label: 'Zamówienia',
+                        data: [
+                            {% for item in last_six_months %}
+                                {{ item.count }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        ],
+                        borderColor: '#007bff',
+                        fill: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Liczba zamówień w ostatnich 6 miesiącach'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Dane do wykresu: Kwota sprzedaży w ostatnich 6 miesiącach
+            var ctxSales = document.getElementById('salesChart').getContext('2d');
+            var salesChart = new Chart(ctxSales, {
+                type: 'line',
+                data: {
+                    labels: [
+                        {% for item in last_six_months_kwota %}
+                            "{{ item.month|date:'F Y' }}"{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    ],
+                    datasets: [{
+                        label: 'Kwota Sprzedaży',
+                        data: [
+                            {% for item in last_six_months_kwota %}
+                                {{ item.total_kwota }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        ],
+                        borderColor: '#28a745',
+                        fill: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Kwota sprzedaży w ostatnich 6 miesiącach'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        </script>
     </div>
 {% endblock %}
-
-

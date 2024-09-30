@@ -1,16 +1,13 @@
-# crm_app/views.py
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Klient, Zamowienie
-from .forms import KlientForm, ZamowienieForm, RejestracjaForm
+from .forms import KlientForm, ZamowienieForm, RejestracjaForm , ProduktForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import Group
-from django.core.mail import send_mail
-from django.conf import settings
-from django.shortcuts import render
 from django.utils.timezone import now
 from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
 
 @login_required
 def dashboard(request):
@@ -30,10 +27,25 @@ def dashboard(request):
     # Top klient z największą kwotą zamówień
     top_klient = zamowienia.values('klient__imie', 'klient__nazwisko').annotate(total_kwota=Sum('kwota')).order_by('-total_kwota').first()
 
+    # Pobieranie danych dla wykresów
+    six_months_ago = now().replace(day=1) - timedelta(days=180)
+
+    # Zamówienia w ostatnich 6 miesiącach
+    last_six_months = Zamowienie.objects.filter(data_zamowienia__gte=six_months_ago) \
+        .annotate(month=TruncMonth('data_zamowienia')) \
+        .values('month') \
+        .annotate(count=Count('id')) \
+        .order_by('month')
+
+    last_six_months_kwota = Zamowienie.objects.filter(data_zamowienia__gte=six_months_ago) \
+        .annotate(month=TruncMonth('data_zamowienia')) \
+        .values('month') \
+        .annotate(total_kwota=Sum('kwota')) \
+        .order_by('month')
+
     context = {
         'klienci': klienci,
         'zamowienia': zamowienia,
-        # Statystyki główne
         'nowe_zamowienia_ilosc': nowe_zamowienia_ilosc,
         'kwota_zrealizowanych': kwota_zrealizowanych,
         'nowi_klienci': nowi_klienci,
@@ -41,6 +53,8 @@ def dashboard(request):
         'zamowienia_w_realizacji_ilosc': zamowienia_w_realizacji_ilosc,
         'anulowane_w_miesiacu': anulowane_w_miesiacu,
         'top_klient': top_klient,
+        'last_six_months': last_six_months,
+        'last_six_months_kwota': last_six_months_kwota,
     }
 
     return render(request, 'crm_app/dashboard.html', context)
@@ -77,7 +91,9 @@ def dodaj_zamowienie(request):
     if request.method == 'POST':
         form = ZamowienieForm(request.POST)
         if form.is_valid():
-            zamowienie = form.save()
+            zamowienie = form.save(commit=False)
+            zamowienie.save()
+            form.save_m2m()  # Zapisz relacje wiele do wielu (produkty)
             print("Zamówienie zapisane:", zamowienie)
             return redirect('dashboard')
         else:
@@ -135,3 +151,17 @@ def raport_sprzedazy(request):
 def custom_logout(request):
     logout(request)
     return redirect('login')
+
+# crm_app/views.py
+
+@login_required
+@permission_required('crm_app.add_produkt', raise_exception=True)
+def dodaj_produkt(request):
+    form = ProduktForm()
+    if request.method == 'POST':
+        form = ProduktForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')
+    context = {'form': form, 'title': 'Dodaj Produkt'}
+    return render(request, 'crm_app/form.html', context)
