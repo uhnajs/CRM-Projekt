@@ -1,37 +1,75 @@
-<!-- crm_app/templates/crm_app/dashboard.html -->
+{% extends 'crm_app/base.html' %}
+{% load static %}
 
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <title>CRM Dashboard</title>
-</head>
-<body>
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
     <h1>Panel Główny</h1>
 
-    <a href="{% url 'dodaj-klienta' %}">Dodaj Klienta</a>
-    <a href="{% url 'dodaj-zamowienie' %}">Dodaj Zamówienie</a>
+    {% if perms.crm_app.add_klient %}
+        <a href="{% url 'dodaj-klienta' %}" class="btn btn-primary">Dodaj Klienta</a>
+    {% endif %}
+    {% if perms.crm_app.add_zamowienie %}
+        <a href="{% url 'dodaj-zamowienie' %}" class="btn btn-primary">Dodaj Zamówienie</a>
+    {% endif %}
 
-    <h2>Lista Klientów</h2>
-    <ul>
-        {% for klient in klienci %}
-            <li>
-                {{ klient.imie }} {{ klient.nazwisko }} - {{ klient.email }}
-                (<a href="{% url 'edytuj-klienta' klient.id %}">Edytuj</a>)
-            </li>
-        {% empty %}
-            <li>Brak klientów.</li>
-        {% endfor %}
-    </ul>
+    <h2 class="mt-4">Lista Klientów</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Imię i Nazwisko</th>
+                <th>E-mail</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for klient in klienci %}
+                <tr>
+                    <td>{{ klient.imie }} {{ klient.nazwisko }}</td>
+                    <td>{{ klient.email }}</td>
+                    <td>
+                        {% if perms.crm_app.change_klient %}
+                            <a href="{% url 'edytuj-klienta' klient.id %}" class="btn btn-sm btn-warning">Edytuj</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">Brak klientów.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-    <h2>Lista Zamówień</h2>
-    <ul>
-        {% for zamowienie in zamowienia %}
-        <li>
-             Zamówienie nr {{ zamowienie.id }} dla {{ zamowienie.klient }} - Status: {{ zamowienie.status }}
-             (<a href="{% url 'edytuj-zamowienie' zamowienie.id %}">Edytuj</a>)
-        </li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+    <h2 class="mt-4">Lista Zamówień</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID Zamówienia</th>
+                <th>Klient</th>
+                <th>Status</th>
+                <th>Kwota</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for zamowienie in zamowienia %}
+                <tr>
+                    <td>{{ zamowienie.id }}</td>
+                    <td>{{ zamowienie.klient }}</td>
+                    <td>{{ zamowienie.get_status_display }}</td>
+                    <td>{{ zamowienie.kwota }}</td>
+                    <td>
+                        {% if perms.crm_app.change_zamowienie %}
+                            <a href="{% url 'edytuj-zamowienie' zamowienie.id %}" class="btn btn-sm btn-warning">Edytuj</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5">Brak zamówień.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'crm_app/base.html' %}
+{% load static %}
+
+{% block title %}Raport Sprzedaży{% endblock %}
+
+{% block content %}
+    <h1>Raport Sprzedaży</h1>
+    <p>Łączna kwota sprzedaży: {{ total_kwota }} PLN</p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID Zamówienia</th>
+                <th>Klient</th>
+                <th>Data</th>
+                <th>Kwota</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for zamowienie in zamowienia %}
+                <tr>
+                    <td>{{ zamowienie.id }}</td>
+                    <td>{{ zamowienie.klient }}</td>
+                    <td>{{ zamowienie.data_zamowienia }}</td>
+                    <td>{{ zamowienie.kwota }}</td>
+                    <td>{{ zamowienie.get_status_display }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5">Brak zamówień.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends 'crm_app/base.html' %}
+{% load static %}
+
+{% block title %}Wylogowano{% endblock %}
+
+{% block content %}
+    <h1>Zostałeś wylogowany</h1>
+    <p><a href="{% url 'login' %}">Zaloguj się ponownie</a></p>
+{% endblock %}
