@@ -1,6 +1,9 @@
 
 # CRM Projekt
 
+![{F519EECE-042F-49D1-A9ED-7A1DD56D5C26}](https://github.com/user-attachments/assets/fcc00793-7833-4d64-a018-5996cf99e3d9)
+
+
 ## Opis projektu
 
 CRM Projekt to prosty system zarządzania relacjami z klientami stworzony w Django. Aplikacja umożliwia zarządzanie klientami, zamówieniami oraz generowanie raportów sprzedaży. Posiada system uwierzytelniania użytkowników z rolami i uprawnieniami.
