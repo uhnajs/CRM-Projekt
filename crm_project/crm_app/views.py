@@ -1,5 +1,5 @@
 # crm_app/views.py
-
+from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Klient, Zamowienie
 from .forms import KlientForm, ZamowienieForm, RejestracjaForm
@@ -8,17 +8,42 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import Group
 from django.core.mail import send_mail
 from django.conf import settings
+from django.shortcuts import render
+from django.utils.timezone import now
+from django.db.models import Count, Sum
 
 @login_required
 def dashboard(request):
+    # Pobierz listę klientów i zamówień z bazy danych
     klienci = Klient.objects.all()
     zamowienia = Zamowienie.objects.all()
+
+    # Statystyki główne
+    nowe_zamowienia_ilosc = zamowienia.filter(data_zamowienia__month=now().month).count()
+    kwota_zrealizowanych = zamowienia.filter(status='zrealizowane').aggregate(Sum('kwota'))['kwota__sum'] or 0
+    nowi_klienci = klienci.filter(data_dodania__gte=now() - timedelta(days=30)).count()
+
+    # Dodatkowe statystyki
+    zamowienia_w_realizacji_ilosc = zamowienia.filter(status='w_realizacji').count()
+    anulowane_w_miesiacu = zamowienia.filter(status='anulowane', data_zamowienia__month=now().month).count()
+
+    # Top klient z największą kwotą zamówień
+    top_klient = zamowienia.values('klient__imie', 'klient__nazwisko').annotate(total_kwota=Sum('kwota')).order_by('-total_kwota').first()
+
     context = {
         'klienci': klienci,
         'zamowienia': zamowienia,
+        # Statystyki główne
+        'nowe_zamowienia_ilosc': nowe_zamowienia_ilosc,
+        'kwota_zrealizowanych': kwota_zrealizowanych,
+        'nowi_klienci': nowi_klienci,
+        # Dodatkowe statystyki
+        'zamowienia_w_realizacji_ilosc': zamowienia_w_realizacji_ilosc,
+        'anulowane_w_miesiacu': anulowane_w_miesiacu,
+        'top_klient': top_klient,
     }
-    return render(request, 'crm_app/dashboard.html', context)
 
+    return render(request, 'crm_app/dashboard.html', context)
 
 @login_required
 @permission_required('crm_app.add_klient', raise_exception=True)

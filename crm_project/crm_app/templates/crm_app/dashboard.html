@@ -4,80 +4,151 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-    <h1>Panel Główny</h1>
+    <div class="container mt-4">
+        <h1>Panel Główny</h1>
 
-    {% if perms.crm_app.add_klient %}
-        <a href="{% url 'dodaj-klienta' %}" class="btn btn-primary">Dodaj Klienta</a>
-    {% endif %}
-    {% if perms.crm_app.add_zamowienie %}
-        <a href="{% url 'dodaj-zamowienie' %}" class="btn btn-primary">Dodaj Zamówienie</a>
-    {% endif %}
+        <!-- Sekcja podsumowań -->
+        <div class="row my-4">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-header">Nowe Zamówienia (Miesiąc)</div>
+                    <div class="card-body">
+                        <h4 class="card-title">{{ nowe_zamowienia_ilosc }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-header">Łączna Kwota Zrealizowanych</div>
+                    <div class="card-body">
+                        <h4 class="card-title">{{ kwota_zrealizowanych|default:"0.00" }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-info mb-3">
+                    <div class="card-header">Nowi Klienci (30 dni)</div>
+                    <div class="card-body">
+                        <h4 class="card-title">{{ nowi_klienci }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <h2 class="mt-4">Lista Klientów</h2>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Imię i Nazwisko</th>
-                <th>E-mail</th>
-                <th>Akcje</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for klient in klienci %}
+        <!-- Sekcja dodatkowych statystyk -->
+        <div class="row my-4">
+            <div class="col-md-4">
+                <div class="card text-white bg-warning mb-3">
+                    <div class="card-header">Zamówienia w Realizacji</div>
+                    <div class="card-body">
+                        <h4 class="card-title">{{ zamowienia_w_realizacji_ilosc }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-danger mb-3">
+                    <div class="card-header">Anulowane w Tym Miesiącu</div>
+                    <div class="card-body">
+                        <h4 class="card-title">{{ anulowane_w_miesiacu }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-dark mb-3">
+                    <div class="card-header">Top Klient (Kwota)</div>
+                    <div class="card-body">
+                        <h4 class="card-title">
+                            {% if top_klient %}
+                                {{ top_klient.klient__imie }} {{ top_klient.klient__nazwisko }} - {{ top_klient.total_kwota }}
+                            {% else %}
+                                Brak danych
+                            {% endif %}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sekcja akcji -->
+        <div class="mb-4">
+            {% if perms.crm_app.add_klient %}
+                <a href="{% url 'dodaj-klienta' %}" class="btn btn-primary mr-2">Dodaj Klienta</a>
+            {% endif %}
+            {% if perms.crm_app.add_zamowienie %}
+                <a href="{% url 'dodaj-zamowienie' %}" class="btn btn-primary">Dodaj Zamówienie</a>
+            {% endif %}
+        </div>
+
+        <!-- Lista Klientów -->
+        <h2 class="mt-4">Lista Klientów</h2>
+        <table class="table table-hover">
+            <thead class="thead-dark">
                 <tr>
-                    <td>{{ klient.imie }} {{ klient.nazwisko }}</td>
-                    <td>{{ klient.email }}</td>
-                    <td>
-                        {% if perms.crm_app.change_klient %}
-                            <a href="{% url 'edytuj-klienta' klient.id %}" class="btn btn-sm btn-warning">Edytuj</a>
+                    <th>Imię i Nazwisko</th>
+                    <th>E-mail</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for klient in klienci %}
+                    <tr>
+                        <td>{{ klient.imie }} {{ klient.nazwisko }}</td>
+                        <td>{{ klient.email }}</td>
+                        <td>
+                            {% if perms.crm_app.change_klient %}
+                                <a href="{% url 'edytuj-klienta' klient.id %}" class="btn btn-sm btn-warning">Edytuj</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3">Brak klientów.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Lista Zamówień -->
+        <h2 class="mt-4">Lista Zamówień</h2>
+        <table class="table table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>ID Zamówienia</th>
+                    <th>Klient</th>
+                    <th>Status</th>
+                    <th>Kwota</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for zamowienie in zamowienia %}
+                    <tr
+                        {% if zamowienie.status == 'w_realizacji' %}
+                            class="table-warning"
+                        {% elif zamowienie.status == 'anulowane' %}
+                            class="table-danger"
+                        {% elif zamowienie.status == 'zrealizowane' %}
+                            class="table-success"
                         {% endif %}
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="3">Brak klientów.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <h2 class="mt-4">Lista Zamówień</h2>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID Zamówienia</th>
-                <th>Klient</th>
-                <th>Status</th>
-                <th>Kwota</th>
-                <th>Akcje</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for zamowienie in zamowienia %}
-                <tr
-                    {% if zamowienie.status == 'w_realizacji' %}
-                        class="table-warning"
-                    {% elif zamowienie.status == 'anulowane' %}
-                        class="table-danger"
-                    {% elif zamowienie.status == 'zrealizowane' %}
-                        class="table-success"
-                    {% endif %}
-                >
-                    <td>{{ zamowienie.id }}</td>
-                    <td>{{ zamowienie.klient }}</td>
-                    <td>{{ zamowienie.get_status_display }}</td>
-                    <td>{{ zamowienie.kwota }}</td>
-                    <td>
-                        {% if perms.crm_app.change_zamowienie %}
-                            <a href="{% url 'edytuj-zamowienie' zamowienie.id %}" class="btn btn-sm btn-warning">Edytuj</a>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="5">Brak zamówień.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    >
+                        <td>{{ zamowienie.id }}</td>
+                        <td>{{ zamowienie.klient }}</td>
+                        <td>{{ zamowienie.get_status_display }}</td>
+                        <td>{{ zamowienie.kwota }}</td>
+                        <td>
+                            {% if perms.crm_app.change_zamowienie %}
+                                <a href="{% url 'edytuj-zamowienie' zamowienie.id %}" class="btn btn-sm btn-warning">Edytuj</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">Brak zamówień.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}
+
+
