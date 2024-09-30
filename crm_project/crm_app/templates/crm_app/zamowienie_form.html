@@ -1,0 +1,17 @@
+<!-- crm_app/templates/crm_app/zamowienie_form.html -->
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Formularz Zamówienia</title>
+</head>
+<body>
+    <h1>Formularz Zamówienia</h1>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Zapisz</button>
+    </form>
+</body>
+</html>

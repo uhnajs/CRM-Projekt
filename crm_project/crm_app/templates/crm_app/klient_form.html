@@ -1,0 +1,17 @@
+<!-- crm_app/templates/crm_app/klient_form.html -->
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Formularz Klienta</title>
+</head>
+<body>
+    <h1>Formularz Klienta</h1>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Zapisz</button>
+    </form>
+</body>
+</html>

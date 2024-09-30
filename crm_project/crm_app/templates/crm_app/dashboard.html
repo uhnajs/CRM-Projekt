@@ -1,0 +1,37 @@
+<!-- crm_app/templates/crm_app/dashboard.html -->
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>CRM Dashboard</title>
+</head>
+<body>
+    <h1>Panel Główny</h1>
+
+    <a href="{% url 'dodaj-klienta' %}">Dodaj Klienta</a>
+    <a href="{% url 'dodaj-zamowienie' %}">Dodaj Zamówienie</a>
+
+    <h2>Lista Klientów</h2>
+    <ul>
+        {% for klient in klienci %}
+            <li>
+                {{ klient.imie }} {{ klient.nazwisko }} - {{ klient.email }}
+                (<a href="{% url 'edytuj-klienta' klient.id %}">Edytuj</a>)
+            </li>
+        {% empty %}
+            <li>Brak klientów.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Lista Zamówień</h2>
+    <ul>
+        {% for zamowienie in zamowienia %}
+        <li>
+             Zamówienie nr {{ zamowienie.id }} dla {{ zamowienie.klient }} - Status: {{ zamowienie.status }}
+             (<a href="{% url 'edytuj-zamowienie' zamowienie.id %}">Edytuj</a>)
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
