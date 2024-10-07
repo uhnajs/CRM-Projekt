@@ -23,7 +23,32 @@
 
     <form method="POST" class="col-md-6">
         {% csrf_token %}
-        {{ form.as_p }}
+        <!-- Renderowanie pól formularza -->
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+            </div>
+        {% endfor %}
         <button type="submit" class="btn btn-success">Zapisz</button>
     </form>
+
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+
+            $('#id_produkty').select2({
+                placeholder: "Wybierz produkt",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    </script>
 {% endblock %}
