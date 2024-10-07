@@ -19,7 +19,12 @@ class KlientForm(ModelForm):
 class ProduktForm(forms.ModelForm):
     class Meta:
         model = Produkt
-        fields = ['nazwa', 'cena', 'opis']
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(ProduktForm, self).__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
 
 class ZamowienieForm(forms.ModelForm):
     produkty = forms.ModelMultipleChoiceField(queryset=Produkt.objects.all(), widget=forms.CheckboxSelectMultiple)
