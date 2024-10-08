@@ -6,12 +6,19 @@
 {% block content %}
     <h1>{{ title }}</h1>
 
-    {% if form.errors %}
+    {% if form.errors or formset.errors %}
         <div class="alert alert-danger">
             <ul>
                 {% for field in form %}
                     {% for error in field.errors %}
                         <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for form in formset %}
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
                     {% endfor %}
                 {% endfor %}
                 {% for error in form.non_field_errors %}
@@ -23,7 +30,8 @@
 
     <form method="POST" class="col-md-6">
         {% csrf_token %}
-        <!-- Renderowanie pól formularza -->
+
+        <!-- Renderowanie pól formularza Zamowienie -->
         {% for field in form %}
             <div class="form-group">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -33,18 +41,27 @@
                 {% endif %}
             </div>
         {% endfor %}
+
+        <!-- Renderowanie formsetu ZamowienieProdukt -->
+        {{ formset.management_form }}
+        {% for form in formset %}
+            <div class="form-group">
+                {{ form.as_p }}
+            </div>
+        {% endfor %}
+
         <button type="submit" class="btn btn-success">Zapisz</button>
     </form>
 
-
+    <!-- Dodaj style Select2 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
     <script>
         $(document).ready(function() {
-
-            $('#id_produkty').select2({
+            // Inicjalizuj Select2 dla każdego pola 'produkt' w formsecie
+            $('select[id$="-produkt"]').select2({
                 placeholder: "Wybierz produkt",
                 allowClear: true,
                 width: '100%'

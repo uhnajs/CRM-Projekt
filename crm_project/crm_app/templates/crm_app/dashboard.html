@@ -35,40 +35,6 @@
             </div>
         </div>
 
-        <!-- Sekcja dodatkowych statystyk -->
-        <div class="row my-4">
-            <div class="col-md-4">
-                <div class="card text-white bg-warning mb-3">
-                    <div class="card-header">Zamówienia w Realizacji</div>
-                    <div class="card-body">
-                        <h4 class="card-title">{{ zamowienia_w_realizacji_ilosc }}</h4>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-white bg-danger mb-3">
-                    <div class="card-header">Anulowane w Tym Miesiącu</div>
-                    <div class="card-body">
-                        <h4 class="card-title">{{ anulowane_w_miesiacu }}</h4>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-white bg-dark mb-3">
-                    <div class="card-header">Top Klient (Kwota)</div>
-                    <div class="card-body">
-                        <h4 class="card-title">
-                            {% if top_klient %}
-                                {{ top_klient.klient__imie }} {{ top_klient.klient__nazwisko }} - {{ top_klient.total_kwota }}
-                            {% else %}
-                                Brak danych
-                            {% endif %}
-                        </h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Sekcja akcji -->
         <div class="mb-4">
             {% if perms.crm_app.add_klient %}
@@ -82,72 +48,128 @@
             {% endif %}
         </div>
 
-
-        <!-- Lista Klientów -->
-        <h2 class="mt-4">Lista Klientów</h2>
-        <table class="table table-hover">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Imię i Nazwisko</th>
-                    <th>E-mail</th>
-                    <th>Akcje</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for klient in klienci %}
-                    <tr>
-                        <td>{{ klient.imie }} {{ klient.nazwisko }}</td>
-                        <td>{{ klient.email }}</td>
-                        <td>
-                            {% if perms.crm_app.change_klient %}
-                                <a href="{% url 'edytuj-klienta' klient.id %}" class="btn btn-sm btn-warning">Edytuj</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="3">Brak klientów.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <!-- Lista Zamówień -->
-        <h2 class="mt-4">Lista Zamówień</h2>
+        <!-- Sekcja zamówień podzielona według statusu -->
+        <!-- Zrealizowane -->
+        <h2 class="mt-4">Lista Zamówień Zrealizowanych</h2>
         <table class="table table-hover">
             <thead class="thead-dark">
                 <tr>
                     <th>ID Zamówienia</th>
                     <th>Klient</th>
-                    <th>Status</th>
-                    <th>Kwota</th>
+                    <th>Ilość Produktów</th>
+                    <th>Cena Jednostkowa</th>
+                    <th>Kwota Całkowita</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for zamowienie in zamowienia_zrealizowane %}
+                    <tr class="table-success">
+                        <td>{{ zamowienie.id }}</td>
+                        <td>{{ zamowienie.klient }}</td>
+                        <td>
+                            {% for produkt in zamowienie.zamowienie_produkty.all %}
+                                {{ produkt.ilosc }}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for produkt in zamowienie.zamowienie_produkty.all %}
+                                {{ produkt.produkt.cena }}
+                            {% endfor %}
+                        </td>
+                        <td>{{ zamowienie.kwota }}</td>
+                        <td>
+                            <a href="{% url 'generuj-fakture' zamowienie.id %}" class="btn btn-sm btn-info">Generuj Fakturę</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">Brak zrealizowanych zamówień.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <!-- Zamówienia w realizacji -->
+        <h2 class="mt-4">Lista Zamówień w Realizacji</h2>
+        <table class="table table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>ID Zamówienia</th>
+                    <th>Klient</th>
+                    <th>Ilość Produktów</th>
+                    <th>Cena Jednostkowa</th>
+                    <th>Kwota Całkowita</th>
                     <th>Akcje</th>
                 </tr>
             </thead>
             <tbody>
                 {% for zamowienie in zamowienia %}
-                    <tr
-                        {% if zamowienie.status == 'w_realizacji' %}
-                            class="table-warning"
-                        {% elif zamowienie.status == 'anulowane' %}
-                            class="table-danger"
-                        {% elif zamowienie.status == 'zrealizowane' %}
-                            class="table-success"
-                        {% endif %}
-                    >
+                    {% if zamowienie.status == 'w_realizacji' %}
+                    <tr class="table-warning">
                         <td>{{ zamowienie.id }}</td>
                         <td>{{ zamowienie.klient }}</td>
-                        <td>{{ zamowienie.get_status_display }}</td>
+                        <td>
+                            {% for produkt in zamowienie.zamowienie_produkty.all %}
+                                {{ produkt.ilosc }}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for produkt in zamowienie.zamowienie_produkty.all %}
+                                {{ produkt.produkt.cena }}
+                            {% endfor %}
+                        </td>
                         <td>{{ zamowienie.kwota }}</td>
                         <td>
-                            {% if perms.crm_app.change_zamowienie %}
-                                <a href="{% url 'edytuj-zamowienie' zamowienie.id %}" class="btn btn-sm btn-warning">Edytuj</a>
-                            {% endif %}
+                            <a href="{% url 'edytuj-zamowienie' zamowienie.id %}" class="btn btn-sm btn-warning">Edytuj</a>
                         </td>
                     </tr>
+                    {% endif %}
                 {% empty %}
                     <tr>
-                        <td colspan="5">Brak zamówień.</td>
+                        <td colspan="6">Brak zamówień w realizacji.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Zamówienia Anulowane -->
+        <h2 class="mt-4">Lista Zamówień Anulowanych</h2>
+        <table class="table table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>ID Zamówienia</th>
+                    <th>Klient</th>
+                    <th>Ilość Produktów</th>
+                    <th>Cena Jednostkowa</th>
+                    <th>Kwota Całkowita</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for zamowienie in zamowienia %}
+                    {% if zamowienie.status == 'anulowane' %}
+                    <tr class="table-danger">
+                        <td>{{ zamowienie.id }}</td>
+                        <td>{{ zamowienie.klient }}</td>
+                        <td>
+                            {% for produkt in zamowienie.zamowienie_produkty.all %}
+                                {{ produkt.ilosc }}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for produkt in zamowienie.zamowienie_produkty.all %}
+                                {{ produkt.produkt.cena }}
+                            {% endfor %}
+                        </td>
+                        <td>{{ zamowienie.kwota }}</td>
+                        <td>
+                            <a href="{% url 'edytuj-zamowienie' zamowienie.id %}" class="btn btn-sm btn-danger">Edytuj</a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% empty %}
+                    <tr>
+                        <td colspan="6">Brak anulowanych zamówień.</td>
                     </tr>
                 {% endfor %}
             </tbody>

@@ -1,43 +1,48 @@
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Klient, Zamowienie
-from .forms import KlientForm, ZamowienieForm, RejestracjaForm , ProduktForm
+from .models import Klient, Zamowienie, Produkt, Powiadomienie, ZamowienieProdukt
+from .forms import KlientForm, ZamowienieForm, RejestracjaForm, ProduktForm, PowiadomienieForm, ZamowienieProduktForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import Group
 from django.utils.timezone import now
 from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
+from django.forms import inlineformset_factory
+from django.http import HttpResponse
+
 
 @login_required
 def dashboard(request):
-    # Pobierz listę klientów i zamówień z bazy danych
     klienci = Klient.objects.all()
     zamowienia = Zamowienie.objects.all()
 
-    # Statystyki główne
+    # Filtracja zamówień według statusów
+    zamowienia_zrealizowane = zamowienia.filter(status='zrealizowane')
+    zamowienia_w_realizacji = zamowienia.filter(status='w_realizacji')
+    zamowienia_anulowane = zamowienia.filter(status='anulowane')
+
     nowe_zamowienia_ilosc = zamowienia.filter(data_zamowienia__month=now().month).count()
-    kwota_zrealizowanych = zamowienia.filter(status='zrealizowane').aggregate(Sum('kwota'))['kwota__sum'] or 0
+    kwota_zrealizowanych = zamowienia_zrealizowane.aggregate(Sum('kwota'))['kwota__sum'] or 0
     nowi_klienci = klienci.filter(data_dodania__gte=now() - timedelta(days=30)).count()
 
     # Dodatkowe statystyki
-    zamowienia_w_realizacji_ilosc = zamowienia.filter(status='w_realizacji').count()
-    anulowane_w_miesiacu = zamowienia.filter(status='anulowane', data_zamowienia__month=now().month).count()
+    zamowienia_w_realizacji_ilosc = zamowienia_w_realizacji.count()
+    anulowane_w_miesiacu = zamowienia_anulowane.filter(data_zamowienia__month=now().month).count()
 
-    # Top klient z największą kwotą zamówień
-    top_klient = zamowienia.values('klient__imie', 'klient__nazwisko').annotate(total_kwota=Sum('kwota')).order_by('-total_kwota').first()
+    top_klient = zamowienia_zrealizowane.values('klient__imie', 'klient__nazwisko').annotate(total_kwota=Sum('kwota')).order_by('-total_kwota').first()
 
     # Pobieranie danych dla wykresów
     six_months_ago = now().replace(day=1) - timedelta(days=180)
 
     # Zamówienia w ostatnich 6 miesiącach
-    last_six_months = Zamowienie.objects.filter(data_zamowienia__gte=six_months_ago) \
+    last_six_months = zamowienia.filter(data_zamowienia__gte=six_months_ago) \
         .annotate(month=TruncMonth('data_zamowienia')) \
         .values('month') \
         .annotate(count=Count('id')) \
         .order_by('month')
 
-    last_six_months_kwota = Zamowienie.objects.filter(data_zamowienia__gte=six_months_ago) \
+    last_six_months_kwota = zamowienia.filter(data_zamowienia__gte=six_months_ago) \
         .annotate(month=TruncMonth('data_zamowienia')) \
         .values('month') \
         .annotate(total_kwota=Sum('kwota')) \
@@ -49,7 +54,9 @@ def dashboard(request):
         'nowe_zamowienia_ilosc': nowe_zamowienia_ilosc,
         'kwota_zrealizowanych': kwota_zrealizowanych,
         'nowi_klienci': nowi_klienci,
-        # Dodatkowe statystyki
+        'zamowienia_zrealizowane': zamowienia_zrealizowane,
+        'zamowienia_w_realizacji': zamowienia_w_realizacji,
+        'zamowienia_anulowane': zamowienia_anulowane,
         'zamowienia_w_realizacji_ilosc': zamowienia_w_realizacji_ilosc,
         'anulowane_w_miesiacu': anulowane_w_miesiacu,
         'top_klient': top_klient,
@@ -58,6 +65,8 @@ def dashboard(request):
     }
 
     return render(request, 'crm_app/dashboard.html', context)
+
+
 
 @login_required
 @permission_required('crm_app.add_klient', raise_exception=True)
@@ -84,42 +93,66 @@ def edytuj_klienta(request, pk):
     context = {'form': form, 'title': 'Edytuj Klienta'}
     return render(request, 'crm_app/form.html', context)
 
+
 @login_required
 @permission_required('crm_app.add_zamowienie', raise_exception=True)
 def dodaj_zamowienie(request):
-    form = ZamowienieForm()
+    ZamowienieProduktFormSet = inlineformset_factory(
+        Zamowienie, ZamowienieProdukt, form=ZamowienieProduktForm, extra=1
+    )
+    form = ZamowienieForm(request.POST or None)
+    formset = ZamowienieProduktFormSet(request.POST or None)
+
     if request.method == 'POST':
-        form = ZamowienieForm(request.POST)
-        if form.is_valid():
+        if form.is_valid() and formset.is_valid():
             zamowienie = form.save(commit=False)
+
+            # Ustawienie tymczasowej kwoty 0 przed dodaniem produktów
+            zamowienie.kwota = 0
             zamowienie.save()
-            form.save_m2m()  # Zapisz relacje wiele do wielu (produkty)
-            print("Zamówienie zapisane:", zamowienie)
+
+            total_kwota = 0  # Inicjalizacja kwoty całkowitej zamówienia
+            zamowienie_produkty = formset.save(commit=False)
+            for zp in zamowienie_produkty:
+                zp.zamowienie = zamowienie
+                zp.save()
+                total_kwota += zp.produkt.cena * zp.ilosc  # Obliczanie kwoty zamówienia na podstawie ceny i ilości
+
+            zamowienie.kwota = total_kwota  # Ustawienie kwoty w zamówieniu
+            zamowienie.save()
+
             return redirect('dashboard')
-        else:
-            print("Błędy formularza:", form.errors)
-    context = {'form': form, 'title': 'Dodaj Zamówienie'}
-    return render(request, 'crm_app/form.html', context)
+
+    context = {'form': form, 'formset': formset, 'title': 'Dodaj Zamówienie'}
+    return render(request, 'crm_app/dodaj_zamowienie.html', context)
+
 
 @login_required
 @permission_required('crm_app.change_zamowienie', raise_exception=True)
 def edytuj_zamowienie(request, pk):
     zamowienie = get_object_or_404(Zamowienie, id=pk)
+    ZamowienieProduktFormSet = inlineformset_factory(
+        Zamowienie, ZamowienieProdukt, form=ZamowienieProduktForm, extra=1
+    )
     form = ZamowienieForm(instance=zamowienie)
+    formset = ZamowienieProduktFormSet(instance=zamowienie)
+
     if request.method == 'POST':
         form = ZamowienieForm(request.POST, instance=zamowienie)
-        if form.is_valid():
-            form.save()
+        formset = ZamowienieProduktFormSet(request.POST, instance=zamowienie)
+        if form.is_valid() and formset.is_valid():
+            zamowienie = form.save()
+            formset.save()
             return redirect('dashboard')
-    context = {'form': form, 'title': 'Edytuj Zamówienie'}
-    return render(request, 'crm_app/form.html', context)
+
+    context = {'form': form, 'formset': formset, 'title': 'Edytuj Zamówienie'}
+    return render(request, 'crm_app/dodaj_zamowienie.html', context)
 
 def rejestracja(request):
     if request.method == 'POST':
         form = RejestracjaForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Przypisanie użytkownika do domyślnej grupy
             grupa = Group.objects.get(name='Pracownicy')
             user.groups.add(grupa)
             login(request, user)
@@ -131,12 +164,10 @@ def rejestracja(request):
 
 @login_required
 def raport_sprzedazy(request):
-    # Poprawne filtrowanie zamówień według statusów
     zamowienia_zrealizowane = Zamowienie.objects.filter(status='zrealizowane')
     zamowienia_anulowane = Zamowienie.objects.filter(status='anulowane')
     zamowienia_w_realizacji = Zamowienie.objects.filter(status='w_realizacji')
 
-    # Łączna kwota tylko dla "Zrealizowane"
     laczna_kwota = sum(z.kwota for z in zamowienia_zrealizowane)
 
     context = {
@@ -152,8 +183,6 @@ def custom_logout(request):
     logout(request)
     return redirect('login')
 
-# crm_app/views.py
-
 @login_required
 @permission_required('crm_app.add_produkt', raise_exception=True)
 def dodaj_produkt(request):
@@ -165,3 +194,21 @@ def dodaj_produkt(request):
             return redirect('dashboard')
     context = {'form': form, 'title': 'Dodaj Produkt'}
     return render(request, 'crm_app/form.html', context)
+
+@login_required
+@permission_required('crm_app.add_powiadomienie', raise_exception=True)
+def dodaj_powiadomienie(request):
+    form = PowiadomienieForm()
+    if request.method == 'POST':
+        form = PowiadomienieForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')
+    context = {'form': form, 'title': 'Dodaj Powiadomienie'}
+    return render(request, 'crm_app/form.html', context)
+
+@login_required
+def generuj_fakture(request, pk):
+    zamowienie = get_object_or_404(Zamowienie, pk=pk)
+    # W tym miejscu dodaj logikę do generowania faktury (np. generowanie PDF)
+    return HttpResponse(f"Faktura dla zamówienia {zamowienie.id}")

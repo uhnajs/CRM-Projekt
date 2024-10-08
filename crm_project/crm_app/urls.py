@@ -13,4 +13,7 @@ urlpatterns = [
     path('logout/', views.custom_logout, name='logout'),
     path('raport-sprzedazy/', views.raport_sprzedazy, name='raport-sprzedazy'),
     path('dodaj-produkt/', views.dodaj_produkt, name='dodaj-produkt'),
+    path('dodaj-powiadomienie/', views.dodaj_powiadomienie, name='dodaj-powiadomienie'),
+    path('generuj-fakture/<int:pk>/', views.generuj_fakture, name='generuj-fakture'),
+
 ]

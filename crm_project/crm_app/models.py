@@ -1,5 +1,3 @@
-# crm_app/models.py
-
 from django.db import models
 
 class Klient(models.Model):
@@ -30,7 +28,6 @@ class Produkt(models.Model):
 
 class Zamowienie(models.Model):
     klient = models.ForeignKey(Klient, on_delete=models.CASCADE)
-    produkty = models.ManyToManyField(Produkt)  # Nowe pole powiązane z produktem
     data_zamowienia = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=15, choices=[
         ('w_realizacji', 'W realizacji'),
@@ -41,6 +38,19 @@ class Zamowienie(models.Model):
 
     def __str__(self):
         return f"Zamówienie {self.id} - {self.klient}"
+
+
+class ZamowienieProdukt(models.Model):
+    zamowienie = models.ForeignKey(Zamowienie, on_delete=models.CASCADE, related_name='zamowienie_produkty')
+    produkt = models.ForeignKey(Produkt, on_delete=models.CASCADE)
+    ilosc = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.produkt.nazwa} x {self.ilosc}"
+
+    def cena_calkowita(self):
+        return self.produkt.cena * self.ilosc
+
 
 class HistoriaKontaktu(models.Model):
     klient = models.ForeignKey(Klient, on_delete=models.CASCADE)
@@ -54,3 +64,23 @@ class HistoriaKontaktu(models.Model):
 
     def __str__(self):
         return f"Kontakt z {self.klient} dnia {self.data_kontaktu.strftime('%Y-%m-%d')}"
+
+
+class Powiadomienie(models.Model):
+    TYPY_POWIADOMIEN = [
+        ('zadanie', 'Zadanie'),
+        ('przypomnienie', 'Przypomnienie'),
+        ('spotkanie', 'Spotkanie'),
+    ]
+
+    tytul = models.CharField(max_length=255)
+    data = models.DateTimeField()
+    opis = models.TextField(blank=True, null=True)
+    klient = models.ForeignKey(Klient, on_delete=models.CASCADE, blank=True, null=True)
+    typ = models.CharField(max_length=20, choices=TYPY_POWIADOMIEN)
+
+    def __str__(self):
+        return f"{self.tytul} - {self.data.strftime('%Y-%m-%d %H:%M')}"
+
+    class Meta:
+        ordering = ['-data']

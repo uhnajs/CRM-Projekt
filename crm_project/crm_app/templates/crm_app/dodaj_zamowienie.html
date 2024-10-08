@@ -1,0 +1,47 @@
+{% extends 'crm_app/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+
+    {% if form.errors or formset.errors %}
+        <div class="alert alert-danger">
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for form in formset %}
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="POST" class="col-md-8">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <h4>Produkty</h4>
+        {{ formset.management_form }}
+        {% for form in formset %}
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.produkt.label_tag }} {{ form.produkt }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.ilosc.label_tag }} {{ form.ilosc }}
+                </div>
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-success mt-3">Zapisz</button>
+    </form>
+{% endblock %}
