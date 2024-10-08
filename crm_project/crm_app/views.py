@@ -10,6 +10,8 @@ from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
 from django.forms import inlineformset_factory
 from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 
 @login_required
@@ -210,5 +212,46 @@ def dodaj_powiadomienie(request):
 @login_required
 def generuj_fakture(request, pk):
     zamowienie = get_object_or_404(Zamowienie, pk=pk)
-    # W tym miejscu dodaj logikę do generowania faktury (np. generowanie PDF)
-    return HttpResponse(f"Faktura dla zamówienia {zamowienie.id}")
+    produkty = ZamowienieProdukt.objects.filter(zamowienie=zamowienie)
+
+    # Ustawienia odpowiedzi dla pliku PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="faktura_{zamowienie.id}.pdf"'
+
+    # Tworzenie obiektu PDF
+    pdf = canvas.Canvas(response, pagesize=letter)
+
+    # Ustawienia strony
+    pdf.setTitle(f'Faktura {zamowienie.id}')
+    pdf.drawString(100, 750, f"Faktura dla zamówienia: {zamowienie.id}")
+    pdf.drawString(100, 735, f"Klient: {zamowienie.klient.imie} {zamowienie.klient.nazwisko}")
+    pdf.drawString(100, 720, f"Data zamówienia: {zamowienie.data_zamowienia.strftime('%Y-%m-%d')}")
+
+    # Tabela z produktami
+    y_position = 690
+    pdf.drawString(100, y_position, "Produkty:")
+    y_position -= 20
+    pdf.drawString(100, y_position, "Nazwa")
+    pdf.drawString(300, y_position, "Ilość")
+    pdf.drawString(400, y_position, "Cena za sztukę")
+    pdf.drawString(500, y_position, "Kwota")
+
+    # Lista produktów
+    y_position -= 20
+    total_kwota = 0
+    for produkt in produkty:
+        pdf.drawString(100, y_position, produkt.produkt.nazwa)
+        pdf.drawString(300, y_position, str(produkt.ilosc))
+        pdf.drawString(400, y_position, f"{produkt.produkt.cena} zł")
+        kwota_produktu = produkt.cena_calkowita()
+        pdf.drawString(500, y_position, f"{kwota_produktu} zł")
+        y_position -= 20
+        total_kwota += kwota_produktu
+
+    # Kwota całkowita
+    pdf.drawString(100, y_position - 20, f"Łączna kwota: {total_kwota} zł")
+
+    # Zakończenie tworzenia pliku PDF
+    pdf.save()
+
+    return response
